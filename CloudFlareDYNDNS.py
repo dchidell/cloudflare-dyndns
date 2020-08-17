@@ -1,6 +1,7 @@
 import CloudFlare
 from requests import get
 import time
+import os
 
 __author__ = "David Chidell"
 
@@ -23,7 +24,7 @@ class CloudFlareDYNDNS:
         elif self.cf_token is not None and (self.cf_email is not None or self.cf_global_key is not None):
             print("Neither CF_EMAIL or CF_GLOBAL_KEY should be set when using CF_TOKEN (using CF_TOKEN by default)")
 
-        if dom_info["cf_token"] is None:
+        if self.cf_token is None:
             self.cf = CloudFlare.CloudFlare(email=self.cf_email, token=self.cf_global_key)
         else:
             self.cf = CloudFlare.CloudFlare(token=self.cf_token)
@@ -52,14 +53,18 @@ class CloudFlareDYNDNS:
         print(f'Entering update loop...')
         while True:
             ip = self.process_ip()
-            if ip is not None:
-                self.current_ip = ip
+            if ip is not None and ip != self.current_ip:
+                try:
+                    self.update_domains(ip)
+                    self.current_ip = ip
+                except Exception as e:
+                    print(f"Unable to update domain: {e} trying again in {self.sleep_time}s")
 
             time.sleep(self.sleep_time)
 
-    def update_domains(self):
+    def update_domains(self,ip):
         for domain in self.domains:
-            post_dict = {"name": domain, "type": "A", "content": self.current_ip, "proxied": self.proxied}
+            post_dict = {"name": domain, "type": "A", "content": ip, "proxied": self.proxied}
             get_records = self.cf.zones.dns_records.get(self.zone, params={"name": domain})
             if len(get_records) == 0:
                 self.cf.zones.dns_records.post(self.zone, data=post_dict)

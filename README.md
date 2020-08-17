@@ -9,7 +9,7 @@ This docker container will update a specified domain (or list of) with the curre
 
 ### Mandatory ENV variables:
 
-CF_GLOBAL_KEY` - CloudFlare API Key (This must be the GLOBAL key)
+`CF_GLOBAL_KEY` - CloudFlare API Key (This must be the GLOBAL key)
 
 and 
 
